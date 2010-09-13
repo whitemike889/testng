@@ -22,7 +22,11 @@ import org.testng.internal.annotations.Sets;
 import org.testng.internal.thread.ThreadUtil;
 import org.testng.internal.version.VersionInfo;
 import org.testng.log4testng.Logger;
+import org.testng.phase.PhaseClassEvent;
 import org.testng.phase.PhaseEvent;
+import org.testng.phase.PhaseMethodEvent;
+import org.testng.phase.PhaseSuiteEvent;
+import org.testng.phase.PhaseTestEvent;
 import org.testng.remote.SuiteDispatcher;
 import org.testng.remote.SuiteSlave;
 import org.testng.reporters.EmailableReporter;
@@ -187,6 +191,8 @@ public class TestNG {
   private IHookable m_hookable;
   private IConfigurable m_configurable;
 
+  private List<IPhaseListener> m_phaseListeners = Lists.newArrayList();
+
   /**
    * Default constructor. Setting also usage of default listeners/reporters.
    */
@@ -211,7 +217,24 @@ public class TestNG {
 
   @Subscriber
   public void onPhaseEvent(PhaseEvent pe) {
-    System.out.println("New phase event:" + pe);
+    for (IPhaseListener l : m_phaseListeners) {
+      if (pe instanceof PhaseSuiteEvent) {
+        l.onSuiteEvent((PhaseSuiteEvent) pe);
+      }
+      else if (pe instanceof PhaseTestEvent) {
+        l.onTestEvent((PhaseTestEvent) pe);
+      }
+      else if (pe instanceof PhaseClassEvent) {
+        l.onClassEvent((PhaseClassEvent) pe);
+      }
+      else if (pe instanceof PhaseMethodEvent) {
+        l.onMethodEvent((PhaseMethodEvent) pe);
+      }
+    }
+  }
+
+  public void addPhaseListener(IPhaseListener l) {
+    m_phaseListeners.add(l);
   }
 
   public int getStatus() {
@@ -727,6 +750,9 @@ public class TestNG {
       if (listener instanceof IConfigurable) {
         m_configurable = (IConfigurable) listener;
       }
+      if (listener instanceof IPhaseListener) {
+        addPhaseListener((IPhaseListener) listener);
+      }
     }
   }
 
@@ -1052,6 +1078,10 @@ public class TestNG {
 
     for (IReporter r : result.getReporters()) {
       addListener(r);
+    }
+
+    for (IPhaseListener l : result.getPhaseListeners()) {
+      addPhaseListener(l);
     }
 
     return result;
