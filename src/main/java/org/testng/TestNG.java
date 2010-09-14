@@ -7,6 +7,8 @@ import com.beust.jcommander.ParameterException;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.testng.annotations.ITestAnnotation;
 import org.testng.collections.Lists;
 import org.testng.collections.Maps;
@@ -24,6 +26,7 @@ import org.testng.internal.version.VersionInfo;
 import org.testng.log4testng.Logger;
 import org.testng.phase.PhaseClassEvent;
 import org.testng.phase.PhaseEvent;
+import org.testng.phase.PhaseGroupEvent;
 import org.testng.phase.PhaseMethodEvent;
 import org.testng.phase.PhaseSuiteEvent;
 import org.testng.phase.PhaseTestEvent;
@@ -41,8 +44,6 @@ import org.testng.xml.XmlMethodSelector;
 import org.testng.xml.XmlSuite;
 import org.testng.xml.XmlTest;
 import org.xml.sax.SAXException;
-
-import javax.xml.parsers.ParserConfigurationException;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -226,6 +227,10 @@ public class TestNG {
       }
       else if (pe instanceof PhaseClassEvent) {
         l.onClassEvent((PhaseClassEvent) pe);
+      }
+      else if (pe instanceof PhaseGroupEvent) {
+        // Note: not implemented yet
+        l.onGroupEvent((PhaseGroupEvent) pe);
       }
       else if (pe instanceof PhaseMethodEvent) {
         l.onMethodEvent((PhaseMethodEvent) pe);
