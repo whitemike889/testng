@@ -27,6 +27,7 @@ import org.testng.internal.annotations.AnnotationHelper;
 import org.testng.internal.annotations.IAnnotationFinder;
 import org.testng.internal.thread.ThreadExecutionException;
 import org.testng.internal.thread.ThreadUtil;
+import org.testng.phase.PhaseMethodEvent;
 import org.testng.xml.XmlClass;
 import org.testng.xml.XmlSuite;
 import org.testng.xml.XmlTest;
@@ -741,8 +742,12 @@ public class Invoker implements IInvoker {
       }
 
 //      if (testResult.getStatus() == ITestResult.SUCCESS) {
-        runTestListeners(testResult);
+      runTestListeners(testResult);
 //      }
+
+      // Invoke the after method phase listener
+      m_configuration.getBus()
+          .post(new PhaseMethodEvent(testClass.getName(), false /* after */, tm));
 
       //
       // Invoke afterMethods only if
@@ -750,7 +755,7 @@ public class Invoker implements IInvoker {
       // - lastTimeOnly is set, and we are reaching the last invocationCount
       //
       invokeConfigurations(testClass, tm, 
-          filterConfigurationMethods(tm, afterMethods, false /* beforeMethods */),
+          filterConfigurationMethods(tm, afterMethods, false /* afterMethods */),
           suite, params, parameterValues,
           instance,
           testResult);

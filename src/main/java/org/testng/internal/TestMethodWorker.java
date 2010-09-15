@@ -127,8 +127,6 @@ public class TestMethodWorker implements IMethodWorker {
         invokeTestMethods(tm, m_testMethods[indexMethod].getInstances(), m_testContext);
       }
       finally {
-        m_configuration.getBus()
-            .post(new PhaseMethodEvent(testClass.getName(), false /* after */, tm));
         invokeAfterClassMethods(testClass, m_testMethods[indexMethod]);
       }
     }
