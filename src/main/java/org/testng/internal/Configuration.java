@@ -25,7 +25,6 @@ public class Configuration implements IConfiguration {
   @Inject
   IConfigurable m_configurable;
 
-  @Inject
   IBus m_bus;
 
   @Override
@@ -56,6 +55,10 @@ public class Configuration implements IConfiguration {
   @Override
   public void setConfigurable(IConfigurable c) {
     m_configurable = c;
+  }
+
+  public void setBus(IBus bus) {
+    m_bus = bus;
   }
 
   public IBus getBus() {

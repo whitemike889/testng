@@ -237,7 +237,10 @@ public class SuiteRunner implements ISuite, Serializable, IInvokedMethodListener
     Map<Method, ITestNGMethod> afterSuiteMethods = new LinkedHashMap<Method, ITestNGMethod>();
 
     IInvoker invoker = null;
-    
+
+    m_configuration.getBus()
+        .post(new PhaseSuiteEvent(m_suite.getName(), true /* before */, m_suite));
+
     // Get the invoker and find all the suite level methods
     for (TestRunner tr: m_testRunners) {
       // TODO: Code smell.  Invoker should belong to SuiteRunner, not TestRunner
@@ -258,8 +261,6 @@ public class SuiteRunner implements ISuite, Serializable, IInvokedMethodListener
     // if the suite we are currently running only contains
     // a <file-suite> tag and no real tests)
     //
-    m_configuration.getBus()
-        .post(new PhaseSuiteEvent(m_suite.getName(), true /* before */, m_suite));
     if (invoker != null) {
       if(beforeSuiteMethods.values().size() > 0) {
         invoker.invokeConfigurations(null,

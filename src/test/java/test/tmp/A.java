@@ -1,6 +1,7 @@
 package test.tmp;
 
-import org.testng.annotations.BeforeClass;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
@@ -18,11 +19,15 @@ public class A {
     System.out.println("before");
   }
 
-  @Test(groups="a")
-  public void a3() {
-    System.out.println("a3");
+  @BeforeMethod
+  public void bm() {
+    System.out.println("Before method");
   }
 
+  @AfterMethod
+  public void am() {
+    System.out.println("After method");
+  }
   //  @Factory
   public Object[] f() {
     return new Object[] {
@@ -31,20 +36,10 @@ public class A {
     };
   }
 
-//  @BeforeClass(groups = "pre", dependsOnMethods = "bc2")
-//  public void bc1() {
-//    System.out.println("Before class 1");
-//  }
-//
-//  @BeforeClass(groups = "pre") // , dependsOnMethods = "bc1")
-//  public void bc2() {
-//    System.out.println("Before class 2");
-//  }
-
-//  @AfterMethod
-//  public void am() {
-//    System.out.println("After method");
-//  }
+  @Test(groups="a")
+  public void a3() {
+    System.out.println("a3");
+  }
 
   @Test
   public void a1() {

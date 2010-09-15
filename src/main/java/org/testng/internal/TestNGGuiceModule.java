@@ -39,7 +39,7 @@ public class TestNGGuiceModule implements Module {
   public void configure(Binder binder) {
     binder.bind(IAnnotationFinder.class).to(JDK15AnnotationFinder.class).in(Singleton.class);
     binder.bind(IConfiguration.class).to(Configuration.class).in(Singleton.class);
-    binder.bind(IBus.class).to(JBus.class).in(Singleton.class);
+//    binder.bind(IBus.class).to(JBus.class).in(Singleton.class);
   }
 
   @Provides

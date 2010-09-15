@@ -18,5 +18,6 @@ public interface IConfiguration {
   IConfigurable getConfigurable();
   void setConfigurable(IConfigurable c);
 
+  void setBus(IBus bus);
   IBus getBus();
 }
