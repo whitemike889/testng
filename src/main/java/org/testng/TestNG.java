@@ -1,7 +1,6 @@
 package org.testng;
 
 
-import com.beust.jbus.JBus;
 import com.beust.jbus.Subscriber;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
@@ -899,7 +898,7 @@ public class TestNG {
     module.setHookable(m_hookable);
     module.setConfigurable(m_configurable);
     m_injector = Guice.createInjector(module);
-    getConfiguration().setBus(new JBus());
+    getConfiguration().getBus().register(this);
   }
   
   /**

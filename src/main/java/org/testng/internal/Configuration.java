@@ -1,6 +1,7 @@
 package org.testng.internal;
 
 import com.beust.jbus.IBus;
+import com.beust.jbus.JBus;
 import com.google.inject.Inject;
 
 import org.testng.IConfigurable;
@@ -25,7 +26,7 @@ public class Configuration implements IConfiguration {
   @Inject
   IConfigurable m_configurable;
 
-  IBus m_bus;
+  IBus m_bus = new JBus();
 
   @Override
   public IAnnotationFinder getAnnotationFinder() {
@@ -55,10 +56,6 @@ public class Configuration implements IConfiguration {
   @Override
   public void setConfigurable(IConfigurable c) {
     m_configurable = c;
-  }
-
-  public void setBus(IBus bus) {
-    m_bus = bus;
   }
 
   public IBus getBus() {

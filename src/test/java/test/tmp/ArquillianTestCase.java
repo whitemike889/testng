@@ -126,7 +126,7 @@ public class ArquillianTestCase
       
    }
 
-   @Listeners(DebugListener.class)
+//   @Listeners(DebugListener.class)
    public class TestClass2 extends TestClass 
    {
       
@@ -159,14 +159,14 @@ public class ArquillianTestCase
 
       public void onClassEvent(PhaseClassEvent event)
       {
-         System.out.println(printTab(1) + "onClassEvent: " + event.isBefore() + " " + event.getTestClass().getName());         
+         System.out.println(printTab(1) + "onClassEvent: " + event.isBefore()
+             + " " + event.getName());
       }
 
       public void onMethodEvent(PhaseMethodEvent event)
       {
          System.out.println(printTab(2) + "onMethodEvent: " + event.isBefore() 
-             + " " + event.getMethod().getMethod().getDeclaringClass().getName()
-             + " " + event.getMethod().getMethod().getName());
+             + " " + event.getName() + " " + event.getMethod().getMethodName());
       }
    }
 
