@@ -1,6 +1,5 @@
 package org.testng;
 
-
 import org.testng.collections.Lists;
 import org.testng.collections.Maps;
 import org.testng.internal.Attributes;
@@ -12,9 +11,7 @@ import org.testng.internal.DynamicGraph;
 import org.testng.internal.IConfiguration;
 import org.testng.internal.IConfigurationListener;
 import org.testng.internal.IInvoker;
-import org.testng.internal.IMethodWorker;
 import org.testng.internal.ITestResultNotifier;
-import org.testng.internal.IWorkerFactory;
 import org.testng.internal.InvokedMethod;
 import org.testng.internal.Invoker;
 import org.testng.internal.MapList;
@@ -30,8 +27,10 @@ import org.testng.internal.XmlMethodSelector;
 import org.testng.internal.annotations.IAnnotationFinder;
 import org.testng.internal.annotations.IListeners;
 import org.testng.internal.annotations.Sets;
-import org.testng.internal.thread.GroupThreadPoolExecutor;
 import org.testng.internal.thread.ThreadUtil;
+import org.testng.internal.thread.graph.GraphThreadPoolExecutor;
+import org.testng.internal.thread.graph.IThreadWorkerFactory;
+import org.testng.internal.thread.graph.IWorker;
 import org.testng.junit.IJUnitTestRunner;
 import org.testng.phase.PhaseTestEvent;
 import org.testng.xml.XmlClass;
@@ -58,7 +57,7 @@ import java.util.regex.Pattern;
  *
  * @author Cedric Beust, Apr 26, 2004
  */
-public class TestRunner implements ITestContext, ITestResultNotifier, IWorkerFactory {
+public class TestRunner implements ITestContext, ITestResultNotifier, IThreadWorkerFactory<ITestNGMethod> {
   /* generated */
   private static final long serialVersionUID = 4247820024988306670L;
   private ISuite m_suite;
@@ -646,24 +645,19 @@ public class TestRunner implements ITestContext, ITestResultNotifier, IWorkerFac
   private void privateRunJUnit(XmlTest xmlTest) {
     ClassInfoMap cim = new ClassInfoMap(m_testClassesFromXml);
     final Set<Class<?>> classes = cim.getClasses();
-    final List<ITestNGMethod> runMethods= Lists.newArrayList();
-    List<IMethodWorker> workers= Lists.newArrayList();
-    // FIXME: directly referincing JUnitTestRunner which uses JUnit classes
+    final List<ITestNGMethod> runMethods = Lists.newArrayList();
+    List<IWorker<ITestNGMethod>> workers = Lists.newArrayList();
+    // FIXME: directly referencing JUnitTestRunner which uses JUnit classes
     // may result in an class resolution exception under different JVMs
     // The resolution process is not specified in the JVM spec with a specific implementation,
     // so it can be eager => failure
-    workers.add(new IMethodWorker() {
+    workers.add(new IWorker<ITestNGMethod>() {
       /**
        * @see org.testng.internal.IMethodWorker#getMaxTimeOut()
        */
       @Override
-      public long getMaxTimeOut() {
+      public long getTimeOut() {
         return 0;
-      }
-
-      @Override
-      public List<ITestResult> getTestResults() {
-        return null;
       }
 
       /**
@@ -686,7 +680,7 @@ public class TestRunner implements ITestContext, ITestResultNotifier, IWorkerFac
       }
 
       @Override
-      public List<ITestNGMethod> getMethods() {
+      public List<ITestNGMethod> getTasks() {
         throw new TestNGException("JUnit not supported");
       }
 
@@ -697,7 +691,7 @@ public class TestRunner implements ITestContext, ITestResultNotifier, IWorkerFac
       }
 
       @Override
-      public int compareTo(IMethodWorker other) {
+      public int compareTo(IWorker<ITestNGMethod> other) {
         return getPriority() - other.getPriority();
       }
     });
@@ -767,9 +761,9 @@ public class TestRunner implements ITestContext, ITestResultNotifier, IWorkerFac
       int threadCount = xmlTest.getThreadCount();
       DynamicGraph<ITestNGMethod> graph = computeAlternateTestList(m_allTestMethods);
       if (graph.getNodeCount() > 0) {
-        GroupThreadPoolExecutor executor = new GroupThreadPoolExecutor(this, xmlTest,
+        GraphThreadPoolExecutor<ITestNGMethod> executor = new GraphThreadPoolExecutor<ITestNGMethod>(graph, this,
             threadCount, threadCount, 0, TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<Runnable>(), graph);
+            new LinkedBlockingQueue<Runnable>());
         executor.run();
         try {
           long timeOut = m_xmlTest.getTimeOut(XmlTest.DEFAULT_TIMEOUT_MS);
@@ -837,8 +831,8 @@ public class TestRunner implements ITestContext, ITestResultNotifier, IWorkerFac
    * be put in the same worker in order to run in the same thread.
    */
   @Override
-  public List<IMethodWorker> createWorkers(XmlTest xmlTest, Set<ITestNGMethod> methods) {
-    List<IMethodWorker> result = Lists.newArrayList();
+  public List<IWorker<ITestNGMethod>> createWorkers(Set<ITestNGMethod> methods) {
+    List<IWorker<ITestNGMethod>> result = Lists.newArrayList();
 
     // Methods that belong to classes with a sequential=true or parallel=classes
     // attribute must all be run in the same worker
@@ -852,7 +846,7 @@ public class TestRunner implements ITestContext, ITestResultNotifier, IWorkerFac
 
       // If either sequential=true or parallel=classes, mark this class sequential
       if (test != null && (test.getSequential() || test.getSingleThreaded()) ||
-          XmlSuite.PARALLEL_CLASSES.equals(xmlTest.getParallel())) {
+          XmlSuite.PARALLEL_CLASSES.equals(m_xmlTest.getParallel())) {
         sequentialClasses.add(cls);
       }
     }
@@ -866,7 +860,7 @@ public class TestRunner implements ITestContext, ITestResultNotifier, IWorkerFac
     // Finally, sort the parallel methods by classes
     //
     methodInstances = m_methodInterceptor.intercept(methodInstances, this);
-    Map<String, String> params = xmlTest.getParameters();
+    Map<String, String> params = m_xmlTest.getParameters();
 
     Set<Class<?>> processedClasses = Sets.newHashSet();
     for (IMethodInstance im : methodInstances) {
@@ -1105,7 +1099,7 @@ public class TestRunner implements ITestContext, ITestResultNotifier, IWorkerFac
   //
   // Invoke the workers
   //
-  private void runWorkers(List<? extends IMethodWorker> workers, String parallelMode,
+  private void runWorkers(List<? extends IWorker<ITestNGMethod>> workers, String parallelMode,
       MapList<Integer, TestMethodWorker> sequentialWorkers) {
     if (XmlSuite.PARALLEL_METHODS.equals(parallelMode) 
         || "true".equalsIgnoreCase(parallelMode)
@@ -1117,8 +1111,8 @@ public class TestRunner implements ITestContext, ITestResultNotifier, IWorkerFac
       // Default timeout for individual methods:  same as the test global-time-out, but
       // overridden if a method defines its own.
       long maxTimeOut = m_xmlTest.getTimeOut(XmlTest.DEFAULT_TIMEOUT_MS);
-      for (IMethodWorker tmw : workers) {
-        long mt = tmw.getMaxTimeOut();
+      for (IWorker<ITestNGMethod> tmw : workers) {
+        long mt = tmw.getTimeOut();
         if (mt > maxTimeOut) {
           maxTimeOut= mt;
         }
@@ -1131,7 +1125,7 @@ public class TestRunner implements ITestContext, ITestResultNotifier, IWorkerFac
       //
       // Sequential run
       //
-      for (IMethodWorker tmw : workers) {
+      for (IWorker<ITestNGMethod> tmw : workers) {
         tmw.run();
       }
     }

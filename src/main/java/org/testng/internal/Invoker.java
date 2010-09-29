@@ -25,8 +25,10 @@ import org.testng.collections.Maps;
 import org.testng.internal.InvokeMethodRunnable.TestNGRuntimeException;
 import org.testng.internal.annotations.AnnotationHelper;
 import org.testng.internal.annotations.IAnnotationFinder;
+import org.testng.internal.annotations.Sets;
 import org.testng.internal.thread.ThreadExecutionException;
 import org.testng.internal.thread.ThreadUtil;
+import org.testng.internal.thread.graph.IWorker;
 import org.testng.phase.PhaseMethodEvent;
 import org.testng.xml.XmlClass;
 import org.testng.xml.XmlSuite;
@@ -35,8 +37,6 @@ import org.testng.xml.XmlTest;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -66,25 +66,25 @@ public class Invoker implements IInvoker {
   private Map<String, Boolean> m_beforegroupsFailures = Maps.newHashtable();
   
   /** Class failures must be synched as the Invoker is accessed concurrently */
-  private Map<Class<?>, Set> m_classInvocationResults = Maps.newHashtable();
+  private Map<Class<?>, Set<Object>> m_classInvocationResults = Maps.newHashtable();
   
   /** Test methods whose configuration methods have failed. */
-  private Map<ITestNGMethod, Set> m_methodInvocationResults = new Hashtable<ITestNGMethod, Set>();
+  private Map<ITestNGMethod, Set<Object>> m_methodInvocationResults = Maps.newHashtable();
   private IConfiguration m_configuration;
    
   private void setClassInvocationFailure(Class<?> clazz, Object instance) {
-    Set instances = m_classInvocationResults.get( clazz );
+    Set<Object> instances = m_classInvocationResults.get( clazz );
     if (instances == null) {
-      instances = new HashSet();
+      instances = Sets.newHashSet();
       m_classInvocationResults.put(clazz, instances);
     }
     instances.add(instance);
   }
   
   private void setMethodInvocationFailure(ITestNGMethod method, Object instance) {
-    Set instances = m_methodInvocationResults.get(method);
+    Set<Object> instances = m_methodInvocationResults.get(method);
     if (instances == null) {
-      instances = new HashSet();
+      instances = Sets.newHashSet();
       m_methodInvocationResults.put(method, instances);
     }
     instances.add(instance);
@@ -249,38 +249,28 @@ public class Invoker implements IInvoker {
    * Is the current <code>IConfiguration</code> a class-level method.
    */
   private  boolean isClassConfiguration(IConfigurationAnnotation configurationAnnotation) {
-    if(null == configurationAnnotation) {
+    if (null == configurationAnnotation) {
       return false;
     }
-    
-    boolean before= (null != configurationAnnotation)
-      ? configurationAnnotation.getBeforeTestClass()
-      : false;
 
-    boolean after= (null != configurationAnnotation)
-      ? configurationAnnotation.getAfterTestClass()
-      : false;
+    boolean before = configurationAnnotation.getBeforeTestClass();
+    boolean after = configurationAnnotation.getAfterTestClass();
 
-    return (before || after);
+    return before || after;
   }
 
   /**
    * Is the current <code>IConfiguration</code> a suite level method.
    */
   private  boolean isSuiteConfiguration(IConfigurationAnnotation configurationAnnotation) {
-    if(null == configurationAnnotation) {
+    if (null == configurationAnnotation) {
       return false;
     }
-    
-    boolean before= (null != configurationAnnotation)
-      ? configurationAnnotation.getBeforeSuite()
-      : false;
 
-    boolean after= (null != configurationAnnotation)
-      ? configurationAnnotation.getAfterSuite()
-      : false;
+    boolean before = configurationAnnotation.getBeforeSuite();
+    boolean after = configurationAnnotation.getAfterSuite();
 
-    return (before || after);
+    return before || after;
   }
 
   /**
@@ -521,9 +511,19 @@ public class Invoker implements IInvoker {
         }
         else {
           //
-          // Not a IHookable, invoke directly
+          // Not a IConfigurable, invoke directly
           //
-          MethodHelper.invokeMethod(method, targetInstance, params);
+          if (MethodHelper.calculateTimeOut(tm) <= 0) {
+            MethodHelper.invokeMethod(method, targetInstance, params);
+          }
+          else {
+            MethodHelper.invokeWithTimeout(tm, targetInstance, params, testResult);
+            if (!testResult.isSuccess()) {
+              // A time out happened
+              throwConfigurationFailure(testResult, testResult.getThrowable());
+              throw testResult.getThrowable();
+            }
+          }
         }
         // Only run the method once if it's @BeforeSuite or @AfterSuite
         if (isSuite) break;
@@ -680,8 +680,7 @@ public class Invoker implements IInvoker {
           //
           try {
             Reporter.setCurrentTestResult(testResult);
-            MethodHelper.invokeWithTimeout(tm, instance,
-                parameterValues, testResult);
+            MethodHelper.invokeWithTimeout(tm, instance, parameterValues, testResult);
           }
           finally {
             Reporter.setCurrentTestResult(null);
@@ -1055,7 +1054,7 @@ public class Invoker implements IInvoker {
     List<ITestResult> result = Lists.newArrayList();
     
     ITestClass testClass= testMethod.getTestClass();
-    long start= System.currentTimeMillis();
+    long start = System.currentTimeMillis();
 
     //
     // TODO:
@@ -1069,7 +1068,6 @@ public class Invoker implements IInvoker {
       timeOutInvocationCount > 0;
       
     int invocationCount = onlyOne ? 1 : testMethod.getInvocationCount();
-    
     int failureCount = 0;
 
     ExpectedExceptionsHolder expectedExceptionHolder = 
@@ -1097,7 +1095,6 @@ public class Invoker implements IInvoker {
             ITestNGMethod[] beforeMethods = filterMethods(testClass, testClass.getBeforeTestMethods());
             ITestNGMethod[] afterMethods = filterMethods(testClass, testClass.getAfterTestMethods());
 
-
             Map<String, String> allParameterNames = Maps.newHashMap();
             ParameterBag bag = createParameters(testClass, testMethod,
                 parameters, allParameterNames, null, suite, testContext, instances[0],
@@ -1118,7 +1115,6 @@ public class Invoker implements IInvoker {
             try {
               List<TestMethodWithDataProviderMethodWorker> workers = Lists.newArrayList();
 
-//                  if (false) { // bag.parameterHolder.origin == ParameterHolder.ORIGIN_DATA_PROVIDER) {
               if (bag.parameterHolder.origin == ParameterHolder.ORIGIN_DATA_PROVIDER &&
                   bag.parameterHolder.dataProviderHolder.annotation.isParallel()) {
                 while (allParameterValues.hasNext()) {
@@ -1339,7 +1335,7 @@ public class Invoker implements IInvoker {
     //
     // Create the workers
     //
-    List<IMethodWorker> workers = Lists.newArrayList();
+    List<IWorker<ITestNGMethod>> workers = Lists.newArrayList();
     
     for (int i = 0; i < testMethod.getInvocationCount(); i++) {
       // we use clones for reporting purposes
@@ -1509,7 +1505,7 @@ public class Invoker implements IInvoker {
    * this method invokes the @BeforeGroups and @AfterGroups corresponding to the current @Test method.
    */
   private List<ITestResult> runWorkers(ITestNGMethod testMethod, 
-      List<IMethodWorker> workers, 
+      List<IWorker<ITestNGMethod>> workers,
       int threadPoolSize, 
       ConfigurationGroupMethods groupMethods, 
       XmlSuite suite, 
@@ -1526,8 +1522,8 @@ public class Invoker implements IInvoker {
     
     long maxTimeOut= -1; // 10 seconds
 
-    for(IMethodWorker tmw : workers) {
-      long mt= tmw.getMaxTimeOut();
+    for(IWorker<ITestNGMethod> tmw : workers) {
+      long mt= tmw.getTimeOut();
       if(mt > maxTimeOut) {
         maxTimeOut= mt;
       }
@@ -1539,8 +1535,10 @@ public class Invoker implements IInvoker {
     // Collect all the TestResults
     //
     List<ITestResult> result = Lists.newArrayList();
-    for (IMethodWorker tmw : workers) {
-      result.addAll(tmw.getTestResults());
+    for (IWorker<ITestNGMethod> tmw : workers) {
+      if (tmw instanceof TestMethodWorker) {
+        result.addAll(((TestMethodWorker)tmw).getTestResults());
+      }
     }
     
     for(Object instance: instances) {
@@ -1705,11 +1703,9 @@ public class Invoker implements IInvoker {
     List<ITestNGMethod> vResult= Lists.newArrayList();
 
     for(ITestNGMethod tm : methods) {
-      if(null == testClass) {
-        testClass= tm.getTestClass();
-      }
+      testClass= tm.getTestClass();
 
-      if(tm.getTestClass().getName().equals(testClass.getName())) {
+      if (tm.getTestClass().getName().equals(testClass.getName())) {
         log(9, "        Keeping method " + tm + " for class " + testClass);
 
         vResult.add(tm);
@@ -1719,9 +1715,7 @@ public class Invoker implements IInvoker {
       }
     }
 
-    ITestNGMethod[] result= vResult.toArray(new ITestNGMethod[vResult.size()]);
-
-    return result;
+    return vResult.toArray(new ITestNGMethod[vResult.size()]);
   }
 
   /**

@@ -14,11 +14,6 @@ public class A {
     System.out.println("bs");
   }
 
-//  @BeforeClass
-  public void bc() {
-    System.out.println("before");
-  }
-
   @BeforeMethod
   public void bm() {
     System.out.println("Before method");
@@ -41,15 +36,22 @@ public class A {
     System.out.println("a3");
   }
 
-  @Test
-  public void a1() {
-    System.out.println("a1 throwing");
-//    throw new RuntimeException();
-//    System.out.println("a1 " + Thread.currentThread().getId());
+//  @BeforeClass(timeOut = 1000)
+  public void bc() throws InterruptedException {
+    System.out.println("bc");
+//    Thread.sleep(2000);
   }
 
-//  @Test
+//  @Test(timeOut = 1000)
+  public void a1() throws InterruptedException {
+//    Thread.sleep(2000);
+//    throw new SkipException("skipped");
+  }
+
+  @Test
   public void a2() {
-    System.out.println("a2 " + Thread.currentThread().getId());
+    throw new RuntimeException("We have a problem");
+//    System.out.println("a2 " + Thread.currentThread().getId());
   }
 }
+
