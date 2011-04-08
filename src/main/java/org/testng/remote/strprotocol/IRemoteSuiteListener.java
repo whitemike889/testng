@@ -32,7 +32,12 @@ public interface IRemoteSuiteListener {
   void onFinish(SuiteMessage suiteMessage);
 
   /**
-   * Protocol v2.
+   * @since Protocol v2
    */
   void onReportEvents(ReportMessage message);
+
+  /**
+   * @since Protocol v2
+   */
+  void onProgressEvents(ProgressMessage message);
 }

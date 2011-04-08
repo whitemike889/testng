@@ -17,6 +17,7 @@ import org.testng.remote.strprotocol.GenericMessage;
 import org.testng.remote.strprotocol.IMessageSender;
 import org.testng.remote.strprotocol.MessageHelper;
 import org.testng.remote.strprotocol.MessageHub;
+import org.testng.remote.strprotocol.ProgressTestListener;
 import org.testng.remote.strprotocol.RemoteTestListener;
 import org.testng.remote.strprotocol.SerializedMessageSender;
 import org.testng.remote.strprotocol.StringMessageSender;
@@ -113,6 +114,10 @@ public class RemoteTestNG extends TestNG {
           setTestRunnerFactory(new DelegatingTestRunnerFactory(buildTestRunnerFactory(), msh));
         } else if (m_protocolVersion == 2) {
           addListener(new RemoteReporter(msh));
+          setTestRunnerFactory(new ProgressRunnerFactory(buildTestRunnerFactory(), msh,
+              suites.size(), testCount));
+        } else {
+          throw new TestNGException("Unknown protocol version requested:" + m_protocolVersion);
         }
 
         m_start = System.currentTimeMillis();
@@ -284,4 +289,28 @@ public class RemoteTestNG extends TestNG {
       return tr;
     }
   }
+
+  private static class ProgressRunnerFactory implements ITestRunnerFactory {
+    private final ITestRunnerFactory m_delegateFactory;
+    private final MessageHub m_messageSender;
+    private int m_suiteCount;
+    private int m_testCount;
+
+    ProgressRunnerFactory(ITestRunnerFactory trf, MessageHub smsh, int suiteCount, int testCount) {
+      m_delegateFactory= trf;
+      m_messageSender= smsh;
+      m_suiteCount = suiteCount;
+      m_testCount = testCount;
+    }
+
+    @Override
+    public TestRunner newTestRunner(ISuite suite, XmlTest test,
+        List<IInvokedMethodListener> listeners) {
+      TestRunner tr = m_delegateFactory.newTestRunner(suite, test, listeners);
+      tr.addListener(new ProgressTestListener(suite, test, m_messageSender, m_suiteCount,
+          m_testCount));
+      return tr;
+    }
+  }
+
 }
