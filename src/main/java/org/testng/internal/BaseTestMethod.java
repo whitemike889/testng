@@ -135,6 +135,10 @@ public abstract class BaseTestMethod implements ITestNGMethod {
     return m_testClassName;
   }
 
+  public void setTestClassName(String testClassName) {
+    m_testClassName = testClassName;
+  }
+
   /**
    * TODO cquezel JavaDoc.
    *
