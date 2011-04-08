@@ -4,6 +4,7 @@ import org.testng.TestNGException;
 import org.testng.remote.strprotocol.GenericMessage;
 import org.testng.remote.strprotocol.IRemoteSuiteListener;
 import org.testng.remote.strprotocol.IRemoteTestListener;
+import org.testng.remote.strprotocol.ReportMessage;
 import org.testng.remote.strprotocol.SuiteMessage;
 import org.testng.remote.strprotocol.TestMessage;
 import org.testng.remote.strprotocol.TestResultMessage;
@@ -66,6 +67,10 @@ public class ResultXMLParser extends XMLParser<Object> {
 
       @Override
       public void onFinish(SuiteMessage suiteMessage) {
+      }
+
+      @Override
+      public void onReportEvents(ReportMessage message) {
       }
 
     };

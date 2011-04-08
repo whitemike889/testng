@@ -14,7 +14,7 @@ import java.net.SocketTimeoutException;
  */
 public class MessageHub {
 
-  private boolean m_debug = false;
+  private boolean m_debug = true;
 
   private IMessageSender m_messageSender;
 

@@ -27,7 +27,8 @@ public abstract class BaseTestMethod implements ITestNGMethod {
    * The test class on which the test method was found. Note that this is not
    * necessarily the declaring class.
    */
-  protected ITestClass m_testClass;
+  transient protected ITestClass m_testClass;
+  private String m_testClassName;
 
   protected final transient Class<?> m_methodClass;
   protected final transient ConstructorOrMethod m_method;
@@ -127,6 +128,11 @@ public abstract class BaseTestMethod implements ITestNGMethod {
         "\nMISMATCH : " + tc.getRealClass() + " " + m_method.getDeclaringClass();
     }
     m_testClass = tc;
+    m_testClassName = tc.getName();
+  }
+
+  public String getTestClassName() {
+    return m_testClassName;
   }
 
   /**

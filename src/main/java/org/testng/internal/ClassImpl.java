@@ -36,7 +36,7 @@ public class ClassImpl implements IClass {
   private int m_instanceCount;
   private long[] m_instanceHashCodes;
   private transient Object m_instance;
-  private ITestObjectFactory m_objectFactory;
+  transient private ITestObjectFactory m_objectFactory;
   private String m_testName = null;
   private XmlClass m_xmlClass;
   private ITestContext m_testContext;

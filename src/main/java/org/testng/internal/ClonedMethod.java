@@ -143,6 +143,11 @@ public class ClonedMethod implements ITestNGMethod {
   }
 
   @Override
+  public String getTestClassName() {
+    return m_method.getTestClassName();
+  }
+
+  @Override
   public int getThreadPoolSize() {
     return m_method.getThreadPoolSize();
   }

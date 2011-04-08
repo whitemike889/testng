@@ -17,6 +17,7 @@ import org.testng.remote.strprotocol.GenericMessage;
 import org.testng.remote.strprotocol.IMessageSender;
 import org.testng.remote.strprotocol.MessageHelper;
 import org.testng.remote.strprotocol.MessageHub;
+import org.testng.remote.strprotocol.RemoteTestListener;
 import org.testng.remote.strprotocol.SerializedMessageSender;
 import org.testng.remote.strprotocol.StringMessageSender;
 import org.testng.remote.strprotocol.SuiteMessage;
@@ -53,6 +54,8 @@ public class RemoteTestNG extends TestNG {
 
   /** Port used for the serialized protocol */
   private static Integer m_serPort = null;
+
+  private static Integer m_protocolVersion;
 
   private static boolean m_debug;
 
@@ -105,8 +108,12 @@ public class RemoteTestNG extends TestNG {
         gm.setTestCount(testCount);
         msh.sendMessage(gm);
 
-        addListener(new RemoteSuiteListener(msh));
-        setTestRunnerFactory(new DelegatingTestRunnerFactory(buildTestRunnerFactory(), msh));
+        if (m_protocolVersion == 1) {
+          addListener(new RemoteSuiteListener(msh));
+          setTestRunnerFactory(new DelegatingTestRunnerFactory(buildTestRunnerFactory(), msh));
+        } else if (m_protocolVersion == 2) {
+          addListener(new RemoteReporter(msh));
+        }
 
         m_start = System.currentTimeMillis();
         super.run();
@@ -183,6 +190,7 @@ public class RemoteTestNG extends TestNG {
       // In debug mode, override the port and the XML file to a fixed location
       cla.port = Integer.parseInt(DEBUG_PORT);
       ra.serPort = cla.port;
+      ra.protocolVersion = 2;
       cla.suiteFiles = Arrays.asList(new String[] {
           DEBUG_SUITE_DIRECTORY + DEBUG_SUITE_FILE
       });
@@ -190,6 +198,7 @@ public class RemoteTestNG extends TestNG {
     remoteTestNg.configure(cla);
     remoteTestNg.setHost(cla.host);
     m_serPort = ra.serPort;
+    m_protocolVersion = ra.protocolVersion;
     remoteTestNg.m_port = cla.port;
     if (isVerbose()) {
       StringBuilder sb = new StringBuilder("Invoked with ");

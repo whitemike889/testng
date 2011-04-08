@@ -20,7 +20,7 @@ public class XmlClass implements Serializable, Cloneable {
   private List<XmlInclude> m_includedMethods = Lists.newArrayList();
   private List<String> m_excludedMethods = Lists.newArrayList();
   private String m_name = null;
-  private Class m_class = null;
+  transient private Class m_class = null;
   /** The index of this class in the <test> tag */
   private int m_index;
   /** True if the classes need to be loaded */

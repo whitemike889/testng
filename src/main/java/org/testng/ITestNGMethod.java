@@ -25,6 +25,7 @@ public interface ITestNGMethod extends Comparable, Serializable, Cloneable {
   Class getRealClass();
 
   ITestClass getTestClass();
+  String getTestClassName();
 
   /**
    * Sets the test class having this method. This is not necessarily the declaring class.

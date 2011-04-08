@@ -157,6 +157,7 @@ public abstract class AbstractRemoteTestRunnerClient {
 
   protected abstract void notifyResultEvents(final TestResultMessage testResultMessage);
 
+  protected abstract void notifyReportEvents(ReportMessage message);
 
   /**
    * Reads the message stream from the RemoteTestRunner
@@ -189,6 +190,9 @@ public abstract class AbstractRemoteTestRunnerClient {
           }
           else if (message instanceof TestResultMessage) {
             notifyResultEvents((TestResultMessage) message);
+          }
+          else if (message instanceof ReportMessage) {
+            notifyReportEvents((ReportMessage) message);
           }
           else {
             throw new TestNGException("Unknown message type:" + message);

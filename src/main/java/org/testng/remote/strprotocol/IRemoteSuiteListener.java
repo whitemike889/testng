@@ -30,4 +30,9 @@ public interface IRemoteSuiteListener {
    * @param suiteMessage the suite message containing infos about the finished suite.
    */
   void onFinish(SuiteMessage suiteMessage);
+
+  /**
+   * Protocol v2.
+   */
+  void onReportEvents(ReportMessage message);
 }

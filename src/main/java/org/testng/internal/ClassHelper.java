@@ -390,7 +390,7 @@ public final class ClassHelper {
         throw new TestNGException("An error occurred while instantiating class "
             + declaringClass.getName() + ". Check to make sure it can be accessed/instantiated.");
       } else {
-        Utils.log(ClassHelper.class.getName(), 2, "Couldn't instantiate class " + declaringClass);
+//        Utils.log(ClassHelper.class.getName(), 2, "Couldn't instantiate class " + declaringClass);
       }
     }
 

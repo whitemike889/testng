@@ -96,7 +96,7 @@ public class TestRunner implements ITestContext, ITestResultNotifier, IThreadWor
   private String m_outputDirectory= Constants.getDefaultValueFor(Constants.PROP_OUTPUT_DIR);
 
   // The XML method selector (groups/methods included/excluded in XML)
-  private XmlMethodSelector m_xmlMethodSelector = new XmlMethodSelector();
+  transient private XmlMethodSelector m_xmlMethodSelector = new XmlMethodSelector();
 
   private static int m_verbose = 1;
 

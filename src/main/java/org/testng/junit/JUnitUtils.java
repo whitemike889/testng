@@ -206,6 +206,10 @@ public class JUnitUtils {
       return m_testClass;
     }
 
+    @Override
+    public String getTestClassName() {
+      return m_testClass.getName();
+    }
 
     /**
      * @see org.testng.ITestNGMethod#addMethodDependedUpon(java.lang.String)
