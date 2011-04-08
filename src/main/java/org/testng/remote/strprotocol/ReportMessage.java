@@ -3,19 +3,18 @@ package org.testng.remote.strprotocol;
 import org.testng.ISuite;
 import org.testng.ISuiteResult;
 import org.testng.ITestContext;
-import org.testng.ITestNGMethod;
+import org.testng.ITestResult;
 import org.testng.collections.Lists;
-import org.testng.collections.Maps;
 import org.testng.xml.XmlSuite;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 public class ReportMessage implements IMessage {
   private List<XmlSuite> m_xmlSuites;
-  private Map<String, Collection<ITestNGMethod>> m_passed = Maps.newHashMap();
+//  private Map<String, Collection<TestResultMessage>> m_passed = Maps.newHashMap();
+  private List<TestResultMessage> m_passed = Lists.newArrayList();
+  
 //  private List<ITestNGMethod> m_methods = Lists.newArrayList();
 
   public ReportMessage(List<XmlSuite> xmlSuites, List<ISuite> suites) {
@@ -24,16 +23,18 @@ public class ReportMessage implements IMessage {
       for (Entry<String, ISuiteResult> es : s.getResults().entrySet()) {
         ISuiteResult sr = es.getValue();
         ITestContext tc = sr.getTestContext();
-        List<ITestNGMethod> l = Lists.newArrayList();
-        l.addAll(tc.getPassedTests().getAllMethods());
-        m_passed.put(es.getKey(), l);
-//        m_passed.put(es.getKey(), );
-//        m_methods.addAll(tc.getPassedTests().getAllMethods());
+//        List<ITestNGMethod> l = Lists.newArrayList();
+//        l.addAll(tc.getPassedTests().getAllMethods());
+//        m_passed.put(es.getKey(), l);
+        for (ITestResult tr : tc.getPassedTests().getAllResults()) {
+          TestResultMessage trm = new TestResultMessage(tc, tr);
+          m_passed.add(trm);
+        }
       }
     }
   }
 
-  public Map<String, Collection<ITestNGMethod>> getPassed() {
+  public List<TestResultMessage> getPassed() {
     return m_passed;
   }
 
