@@ -61,41 +61,33 @@ public class ProgressTestListener implements IResultListener {
 
   @Override
   public void onTestFailedButWithinSuccessPercentage(ITestResult testResult) {
-//    if (null == m_currentTestContext) {
-//      m_sender.sendMessage(new TestResultMessage(m_suite.getName(), m_xmlTest.getName(), testResult));
-//    }
-//    else {
-//      m_sender.sendMessage(new TestResultMessage(m_currentTestContext, testResult));
-//    }
+    sendProgress(testResult);
   }
 
   @Override
   public void onTestFailure(ITestResult testResult) {
-//    if (null == m_currentTestContext) {
-//      m_sender.sendMessage(new TestResultMessage(m_suite.getName(), m_xmlTest.getName(), testResult));
-//    }
-//    else {
-//      m_sender.sendMessage(new TestResultMessage(m_currentTestContext, testResult));
-//    }
+    sendProgress(testResult);
   }
 
   @Override
   public void onTestSkipped(ITestResult testResult) {
-//    if (null == m_currentTestContext) {
-//      m_sender.sendMessage(new TestResultMessage(m_suite.getName(), m_xmlTest.getName(), testResult));
-//    }
-//    else {
-//      m_sender.sendMessage(new TestResultMessage(m_currentTestContext, testResult));
-//    }
+    sendProgress(testResult);
   }
 
   @Override
   public void onTestSuccess(ITestResult testResult) {
-    String testName = testResult.getMethod().getXmlTest().getName();
-    if (! m_xmlTestsRun.contains(testName)) {
-      m_xmlTestsRun.add(testName);
-      m_sender.sendMessage(new ProgressMessage(1, m_testCount));
-      System.out.println("Sending progress: " + testName);
+    sendProgress(testResult);
+  }
+
+  private void sendProgress(ITestResult testResult) {
+    XmlTest xmlTest = testResult.getMethod().getXmlTest();
+    if (xmlTest != null) {
+      String testName = xmlTest.getName();
+      if (! m_xmlTestsRun.contains(testName)) {
+        m_xmlTestsRun.add(testName);
+        m_sender.sendMessage(new ProgressMessage(1, m_testCount));
+        System.out.println("Sending progress: " + testName);
+      }
     }
   }
 

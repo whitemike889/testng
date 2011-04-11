@@ -756,6 +756,10 @@ public abstract class BaseTestMethod implements ITestNGMethod {
     return m_xmlTest;
   }
 
+  /**
+   * Note: only TestNGMethods have a non-null XmlTest (not useful for configuration methods).
+   * @param xmlTest
+   */
   public void setXmlTest(XmlTest xmlTest) {
     m_xmlTest = xmlTest;
   }
