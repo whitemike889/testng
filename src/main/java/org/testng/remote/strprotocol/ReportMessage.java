@@ -1,5 +1,6 @@
 package org.testng.remote.strprotocol;
 
+import org.testng.IResultMap;
 import org.testng.ISuite;
 import org.testng.ISuiteResult;
 import org.testng.ITestContext;
@@ -11,26 +12,29 @@ import java.util.List;
 import java.util.Map.Entry;
 
 public class ReportMessage implements IMessage {
-  private List<XmlSuite> m_xmlSuites;
-//  private Map<String, Collection<TestResultMessage>> m_passed = Maps.newHashMap();
+  private static final long serialVersionUID = 1L;
+
+  private List<TestResultMessage> m_failed = Lists.newArrayList();
   private List<TestResultMessage> m_passed = Lists.newArrayList();
+  private List<TestResultMessage> m_skipped = Lists.newArrayList();
   
 //  private List<ITestNGMethod> m_methods = Lists.newArrayList();
 
   public ReportMessage(List<XmlSuite> xmlSuites, List<ISuite> suites) {
-    m_xmlSuites = xmlSuites;
     for (ISuite s : suites) {
       for (Entry<String, ISuiteResult> es : s.getResults().entrySet()) {
         ISuiteResult sr = es.getValue();
         ITestContext tc = sr.getTestContext();
-//        List<ITestNGMethod> l = Lists.newArrayList();
-//        l.addAll(tc.getPassedTests().getAllMethods());
-//        m_passed.put(es.getKey(), l);
-        for (ITestResult tr : tc.getPassedTests().getAllResults()) {
-          TestResultMessage trm = new TestResultMessage(tc, tr);
-          m_passed.add(trm);
-        }
+        addResults(m_failed, tc.getFailedTests(), tc);
+        addResults(m_skipped, tc.getSkippedTests(), tc);
+        addResults(m_passed, tc.getPassedTests(), tc);
       }
+    }
+  }
+
+  private void addResults(List<TestResultMessage> outMessages, IResultMap result, ITestContext tc) {
+    for (ITestResult tr : result.getAllResults()) {
+      outMessages.add(new TestResultMessage(tc, tr));
     }
   }
 
@@ -38,4 +42,11 @@ public class ReportMessage implements IMessage {
     return m_passed;
   }
 
+  public List<TestResultMessage> getFailed() {
+    return m_failed;
+  }
+
+  public List<TestResultMessage> getSkipped() {
+    return m_skipped;
+  }
 }
