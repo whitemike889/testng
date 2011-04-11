@@ -21,7 +21,7 @@ public class SerializedMessageSender extends BaseMessageSender {
       oos.writeObject(message);
       oos.flush();
 
-      waitForAck();
+//      waitForAck();
     }
   }
 
