@@ -288,5 +288,22 @@ public class TestResult implements ITestResult {
 		  return 0;
 	  }
   }
+
+  @Override
+  public int hashCode() {
+    return m_method.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == null) return false;
+    if (o == this) return true;
+    try {
+      ITestResult tr = (ITestResult) o;
+      return m_method.equals(tr.getMethod());
+    } catch(ClassCastException ex) {
+      return false;
+    }
+  }
 }
 

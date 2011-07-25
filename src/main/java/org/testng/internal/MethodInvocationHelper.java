@@ -13,13 +13,14 @@ import org.testng.internal.thread.IFutureResult;
 import org.testng.internal.thread.ThreadExecutionException;
 import org.testng.internal.thread.ThreadTimeoutException;
 import org.testng.internal.thread.ThreadUtil;
-import org.testng.xml.XmlSuite;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Collections of helper methods to help deal with invocation of TestNG methods
@@ -188,16 +189,19 @@ public class MethodInvocationHelper {
    * Invokes a method on a separate thread in order to allow us to timeout the
    * invocation. It uses as implementation an <code>Executor</code> and a
    * <code>CountDownLatch</code>.
+   * @param currentTestMethod 
    */
   protected static void invokeWithTimeout(ITestNGMethod tm, Object instance,
-      Object[] parameterValues, ITestResult testResult)
+      Object[] parameterValues, ITestResult testResult, ITestContext testContext,
+      ITestNGMethod currentTestMethod)
       throws InterruptedException, ThreadExecutionException {
     if (ThreadUtil.isTestNGThread()) {
       // We are already running in our own executor, don't create another one (or we will
       // lose the time out of the enclosing executor).
       invokeWithTimeoutWithNoExecutor(tm, instance, parameterValues, testResult);
     } else {
-      invokeWithTimeoutWithNewExecutor(tm, instance, parameterValues, testResult);
+      invokeWithTimeoutWithNewExecutor(tm, instance, parameterValues, testResult, testContext,
+          currentTestMethod);
     }
   }
 
@@ -215,18 +219,38 @@ public class MethodInvocationHelper {
   }
 
   private static void invokeWithTimeoutWithNewExecutor(ITestNGMethod tm, Object instance,
-      Object[] parameterValues, ITestResult testResult)
+      Object[] parameterValues, ITestResult testResult, ITestContext context,
+      ITestNGMethod currentTestMethod)
       throws InterruptedException, ThreadExecutionException {
-    IExecutor exec = ThreadUtil.createExecutor(1, tm.getMethod().getName());
+
+    IExecutor previousExecutor = (IExecutor) context.getAttribute("executor");
+    boolean hasTimeOut = currentTestMethod != null && currentTestMethod.getTimeOut() > 0;
+    boolean newExecutor = tm.isBeforeMethodConfiguration()
+        || previousExecutor == null
+        || (! tm.isBeforeMethodConfiguration() && ! hasTimeOut);
+    IExecutor exec = newExecutor
+        ? ThreadUtil.createExecutor(1, tm.getMethod().getName())
+        : previousExecutor;
+
+//    System.out.println("[MIHelper] Executor:" + exec);
+    context.setAttribute("executor", exec);
 
     InvokeMethodRunnable imr = new InvokeMethodRunnable(tm, instance, parameterValues);
     IFutureResult future = exec.submitRunnable(imr);
-    exec.shutdown();
+//    exec.shutdown();
     long realTimeOut = MethodHelper.calculateTimeOut(tm);
-    boolean finished = exec.awaitTermination(realTimeOut);
+    if (realTimeOut == 0) realTimeOut = Long.MAX_VALUE;
+
+    boolean finished = true;
+    try {
+      future.get(realTimeOut, TimeUnit.MILLISECONDS);
+    }
+    catch(TimeoutException ee) {
+      finished = false;
+    }
 
     if (!finished) {
-      exec.stopNow();
+//      exec.stopNow();
       ThreadTimeoutException exception = new ThreadTimeoutException("Method "
           + tm.getClass().getName() + "." + tm.getMethodName() + "()"
           + " didn't finish within the time-out " + realTimeOut);
@@ -242,8 +266,7 @@ public class MethodInvocationHelper {
       future.get();
       // done.await();
 
-      testResult.setStatus(ITestResult.SUCCESS); // if no exception till here
-                                                 // than SUCCESS
+      testResult.setStatus(ITestResult.SUCCESS); // if no exception till here then SUCCESS
     }
   }
 

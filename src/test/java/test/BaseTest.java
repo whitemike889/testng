@@ -108,6 +108,7 @@ public class BaseTest extends BaseDistributedTest {
   }
 
   protected XmlTest getTest() {
+    ppp("Returning test " + m_tests.get(getId()));
     return m_tests.get(getId());
   }
 
@@ -202,7 +203,17 @@ public class BaseTest extends BaseDistributedTest {
 
   protected XmlClass addClass(String className) {
     XmlClass result= new XmlClass(className);
-    getTest().getXmlClasses().add(result);
+    XmlTest test = getTest();
+    if (test != null) {
+      List<XmlClass> xmlClasses = test.getXmlClasses();
+      if (xmlClasses != null) {
+        xmlClasses.add(result);
+      } else {
+        throw new NullPointerException("classes is null");
+      }
+    } else {
+      throw new NullPointerException("test is null");
+    }
 
     return result;
   }
@@ -272,6 +283,7 @@ public class BaseTest extends BaseDistributedTest {
     m_suite.setName("Internal_suite");
     XmlTest xmlTest= new XmlTest(m_suite);
     xmlTest.setName("Internal_test_failures_are_expected");
+    ppp("Adding test " + xmlTest);
     m_tests.put(getId(), xmlTest);
   }
 
@@ -295,10 +307,12 @@ public class BaseTest extends BaseDistributedTest {
   }
 
   public void addPassedTest(ITestResult t) {
+    ppp("Recording passed tests:" + t);
     addTest(getPassedTests(), t);
   }
 
   public void addFailedTest(ITestResult t) {
+    ppp("Recording failed tests:" + t);
     addTest(getFailedTests(), t);
   }
 
@@ -323,7 +337,9 @@ public class BaseTest extends BaseDistributedTest {
   }
 
   private void ppp(String s) {
-    System.out.println("[BaseTest " + getId() + "] " + s);
+    if (true) {
+      System.out.println("[BaseTest " + getId() + "] " + s);
+    }
   }
 
   protected Long getId() {

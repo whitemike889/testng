@@ -354,6 +354,7 @@ public class MethodHelper {
   }
 
   protected static long calculateTimeOut(ITestNGMethod tm) {
+    if (tm == null) return 0;
     long result = tm.getTimeOut() > 0 ? tm.getTimeOut() : tm.getInvocationTimeOut();
     return result;
   }

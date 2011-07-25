@@ -202,8 +202,8 @@ public class Invoker implements IInvoker {
 
             runConfigurationListeners(testResult, true /* before */);
 
-            invokeConfigurationMethod(newInstances, tm,
-              parameters, isClassConfiguration, isSuiteConfiguration, testResult);
+            invokeConfigurationMethod(newInstances, tm, parameters,
+              isClassConfiguration, isSuiteConfiguration, testResult, currentTestMethod);
 
             // TODO: probably we should trigger the event for each instance???
             testResult.setEndMillis(System.currentTimeMillis());
@@ -487,7 +487,8 @@ public class Invoker implements IInvoker {
                                          Object[] params,
                                          boolean isClass,
                                          boolean isSuite,
-                                         ITestResult testResult)
+                                         ITestResult testResult,
+                                         ITestNGMethod currentTestMethod)
     throws InvocationTargetException, IllegalAccessException
   {
     // Mark this method with the current thread id
@@ -524,11 +525,12 @@ public class Invoker implements IInvoker {
           //
           // Not a IConfigurable, invoke directly
           //
-          if (MethodHelper.calculateTimeOut(tm) <= 0) {
+          if (MethodHelper.calculateTimeOut(currentTestMethod) <= 0) {
             MethodInvocationHelper.invokeMethod(method, targetInstance, params);
           }
           else {
-            MethodInvocationHelper.invokeWithTimeout(tm, targetInstance, params, testResult);
+            MethodInvocationHelper.invokeWithTimeout(tm, targetInstance, params, testResult,
+                m_testContext, currentTestMethod);
             if (!testResult.isSuccess()) {
               // A time out happened
               throwConfigurationFailure(testResult, testResult.getThrowable());
@@ -688,7 +690,8 @@ public class Invoker implements IInvoker {
           //
           try {
             Reporter.setCurrentTestResult(testResult);
-            MethodInvocationHelper.invokeWithTimeout(tm, instance, parameterValues, testResult);
+            MethodInvocationHelper.invokeWithTimeout(tm, instance, parameterValues, testResult,
+                m_testContext, tm);
           }
           finally {
             Reporter.setCurrentTestResult(null);

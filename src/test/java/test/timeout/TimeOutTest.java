@@ -25,15 +25,15 @@ public class TimeOutTest extends BaseTest {
     run();
     String[] passed = {
         "timeoutShouldPass",
-      };
-      String[] failed = {
-        "timeoutShouldFailByException", "timeoutShouldFailByTimeOut"
-      };
+    };
+    String[] failed = {
+      "timeoutShouldFailByException", "timeoutShouldFailByTimeOut"
+    };
 
-//      dumpResults("Passed", getPassedTests());
+    dumpResults("Passed", getPassedTests());
 
-      verifyTests("Passed", passed, getPassedTests());
-      verifyTests("Failed", failed, getFailedTests());
+    verifyTests("Passed", passed, getPassedTests());
+    verifyTests("Failed", failed, getFailedTests());
   }
 
   @Test

@@ -54,13 +54,13 @@ public class Reporter {
     m_output.clear();
   }
 
-  private static synchronized void log(String s, ITestResult m) {
+  private static synchronized void log(String s, ITestResult tr) {
     // synchronization needed to ensure the line number and m_output are updated atomically
     int n = getOutput().size();
-    List<Integer> lines = m_methodOutputMap.get(m);
+    List<Integer> lines = m_methodOutputMap.get(tr);
     if (lines == null) {
       lines = Lists.newArrayList();
-      m_methodOutputMap.put(m, lines);
+      m_methodOutputMap.put(tr, lines);
     }
     lines.add(n);
     getOutput().add(s);

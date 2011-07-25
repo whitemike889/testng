@@ -1,5 +1,6 @@
 package test.timeout;
 
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 /**
@@ -9,11 +10,17 @@ import org.testng.annotations.Test;
  */
 public class TimeOutSampleTest {
 
-  @Test(timeOut = 5000 /* 5 seconds */)
-  public void timeoutShouldPass() {
+  @BeforeMethod
+  public void bm() {
+    System.out.println("before method " + Thread.currentThread().getId());
   }
 
-  @Test(timeOut = 5 * 1000 /* 5 seconds */)
+  @Test(timeOut = 1000 /* 1 second */)
+  public void timeoutShouldPass() {
+    System.out.println("Should pass " + Thread.currentThread().getId());
+  }
+
+  @Test(timeOut = 1 * 1000 /* 1 second */)
   public void timeoutShouldFailByException() {
     throw new RuntimeException("EXCEPTION SHOULD MAKE THIS METHOD FAIL");
   }
