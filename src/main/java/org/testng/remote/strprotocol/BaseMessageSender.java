@@ -127,7 +127,8 @@ abstract public class BaseMessageSender implements IMessageSender {
 
 	  Socket socket = serverSocket.accept();
 	  m_inStream = socket.getInputStream();
-	  m_inReader = new BufferedReader(new InputStreamReader(m_inStream));
+	  m_inReader = new BufferedReader(new InputStreamReader(m_inStream,
+              "UTF-8")); //$NON-NLS-1$
 	  m_outStream = socket.getOutputStream();
 	  m_outWriter = new PrintWriter(new OutputStreamWriter(m_outStream));
     }
